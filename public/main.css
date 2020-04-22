@@ -1,0 +1,21 @@
+body {
+    padding: 32px;
+}
+.zwave-value-container {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-column-gap: 16px;
+}
+
+.zwave-value {
+    padding: 16px;
+}
+
+.zwave-value h3 {
+    margin:0;
+}
+
+.zwave-value .help {
+    color: #999;
+}
