@@ -1,5 +1,5 @@
 const ZWave = require('openzwave-shared');
-const devicePath = "/dev/cu.usbmodem14201";
+const devicePath = "/dev/ttyACM0";
 let homeid = null;
 let nodes = [];
 
@@ -193,5 +193,8 @@ module.exports = {
 			instance: instance,
 			index: index,
 		});
+  },
+  startEnteringMode: function() {
+    zwave.addNode();
   }
 };

@@ -24,6 +24,12 @@ app.post('/zwave/stop', (req, res) => {
     });
 });
 
+app.post('/zwave/nodes', (req, res) => {
+    ZWaveManager.startEnteringMode();
+
+    return res.send({success: true});
+});
+
 app.get('/zwave/nodes/:nodeId', (req, res) => {
     return res.send(ZWaveManager.getNode(req.params.nodeId));
 });

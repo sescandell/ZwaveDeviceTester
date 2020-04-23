@@ -1,8 +1,7 @@
 Vue.component('app', {
     template: `
-        <div>
+        <div class="app">
             <zwave-controller />
-            <zwave-node />
         </div>
     `,
 });
@@ -12,13 +11,26 @@ Vue.component('zwave-controller', {
         return {
             started: false,
             loading: false,
+            nodeId: null,
+            nodes: [],
         };
     },
     template: `
-        <div>
+        <div class="zwave-controller">
             <h1>Controller</h1>
             <span @click="start" v-if="!started">Start<span v-if="loading"> *</span></span>
             <span @click="stop" v-else>Stop</span>
+            <div v-if="started">
+                <span @click="addNode">Add Node</span>
+            </div>
+            <div>
+                <label>
+                    Node id:
+                    <input type="text" v-model="nodeId"/>
+                    <span @click="load">Load</span>
+                </label>
+            </div>
+            <zwave-node v-for="node in nodes" :key="node.id" :id="node.id" :node="node.node"/>
         </div>
     `,
     methods: {
@@ -39,21 +51,46 @@ Vue.component('zwave-controller', {
             } finally {
                 this.loading = false;
             }
-        }
+        },
+        addNode: async function() {
+            try {
+                const r = await axios.post('zwave/nodes');
+            } finally {
+            }
+        },
+        load: async function() {
+            if (!this.nodeId) {
+                return;
+            }
+
+            if (this.nodes.filter(nodeDesc => nodeDesc.id == this.nodeId).length != 0) {
+                // Already displayed
+                return;
+            }
+
+            const node = (await axios.get('zwave/nodes/' + this.nodeId)).data;
+            console.log('%o', node);
+
+            this.nodes.push({id: this.nodeId, node: node});
+            this.nodeId = null;
+        },
     }
 });
 
 Vue.component('zwave-node', {
+    props: {
+        node: Object,
+        id: Number,
+    },
     data: function() {
         return {
-            node: null,
-            nodeId: null
+            commClass: null,
+            jsonHidden: true,
         };
     },
     template: `
-        <div>
-            <h1>Node</h1>
-            <input v-model="nodeId" /> <span @click="load">Charger</span>
+        <div class="zwave-node">
+            <h1>Node {{id}} <span @click="remove">Remove</span></h1>
             <div v-if="node">
                 <h2>{{node.product}}</h2>
                 <dl>
@@ -66,10 +103,15 @@ Vue.component('zwave-node', {
                     <dt>Type</dt>
                     <dd>{{node.type}}</dd>
                 </dl>
-                <div class="zwave-value-container">
-                    <zwave-widget v-for="(value, index) in getCommandClass(38)" :key="index" :value="value" />
+                <label>
+                    CommClass: <input type="text" v-model="commClass" />
+                </label>
+                <div class="zwave-widget-container">
+                    <zwave-widget v-for="(value, index) in getCommandClass()" :key="index" :value="value" />
                 </div>
-                <pre>{{jsonNode}}</pre>
+                <span v-if="jsonHidden" @click="toggleJson">View JSON</span>
+                <span v-else @click="toggleJson">Hide JSON</span>
+                <pre v-if="!jsonHidden">{{jsonNode}}</pre>
             </div>
         </div>
     `,
@@ -86,18 +128,19 @@ Vue.component('zwave-node', {
 
             return 'zwave-value';
         },
-        getCommandClass: function(commClass) {
-            return this.node.classes[commClass]
-        },
-        load: async function() {
-            if (!this.nodeId) {
-                this.node = null;
-
+        getCommandClass: function() {
+            if (null === this.commClass) {
                 return;
             }
-            this.node = (await axios.get('zwave/nodes/' + this.nodeId)).data;
-            console.log('%o', this.node);
-        }
+
+            return this.node.classes[this.commClass]
+        },
+        remove: function() {
+
+        },
+        toggleJson: function() {
+            this.jsonHidden = !this.jsonHidden;
+        },
     }
 });
 
@@ -112,7 +155,7 @@ Vue.component('zwave-widget', {
         value: Object,
     },
     template: `
-        <div class="zwave-value">
+        <div class="zwave-widget">
             <h3>{{value.label}}</h3>
             <span class="help">{{value.help}}</span>
             <dl>
@@ -163,14 +206,14 @@ Vue.component('zwave-widget-range', {
     },
     template: `
     <div class="zwave-widget-range">
-        <input type="range" :min="value.min" :max="value.max" @change="valueUpdated" :value="value.value" />
+        <input type="range" :min="value.min" :max="value.max" @change="valueUpdated" v-model="value.value" />
     </div>
     `,
     methods: {
         valueUpdated: async function(evt) {
             const value = parseInt(evt.target.value, 10) * 99 / this.value.max;
-            this.value.value = 
             console.log('%d => %d', parseInt(evt.target.value, 10), value);
+
             await axios.post(
                 `/zwave/nodes/${this.value.node_id}/value`,
                 {

@@ -1,21 +1,26 @@
 body {
     padding: 32px;
 }
-.zwave-value-container {
+.zwave-widget-container {
     margin-top: 32px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-column-gap: 16px;
 }
 
-.zwave-value {
+.zwave-widget {
     padding: 16px;
 }
 
-.zwave-value h3 {
+.zwave-widget h3 {
     margin:0;
 }
 
-.zwave-value .help {
+.zwave-widget .help {
     color: #999;
+}
+
+.zwave-node h1 span {
+    font-size: 1rem;
+    font-weight: normal;
 }
